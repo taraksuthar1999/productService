@@ -2,9 +2,11 @@ package com.example.productservice.dtos.product;
 
 import com.example.productservice.dtos.category.CategoryDto;
 import com.example.productservice.models.Product;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+@Builder
 @Setter
 @Getter
 public class ProductResponseDto {
@@ -14,29 +16,16 @@ public class ProductResponseDto {
     private Double price;
     private CategoryDto category;
     private String img;
-    private Long quantity;
 
     public static ProductResponseDto fromProduct(Product product){
-        ProductResponseDto productResponseDto = new ProductResponseDto();
-        productResponseDto.setId(product.getId());
-        productResponseDto.setTitle(product.getTitle());
-        productResponseDto.setDescription(product.getDescription());
-        productResponseDto.setImg(product.getImg());
-        productResponseDto.setCategory(CategoryDto.fromCategory(product.getCategory()));
-        productResponseDto.setPrice(product.getPrice());
-        productResponseDto.setQuantity(product.getQuantity());
-        return productResponseDto;
+        return ProductResponseDto.builder()
+                .id(product.getId())
+                .title(product.getTitle())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .category(CategoryDto.fromCategory(product.getCategory()))
+                .img(product.getImg())
+                .build();
     }
 
-    public Product toProduct(){
-        Product product = new Product();
-        product.setId(id);
-        product.setTitle(this.title);
-        product.setImg(this.img);
-        product.setCategory(this.category.toCategory());
-        product.setPrice(this.price);
-        product.setDescription(this.description);
-        product.setQuantity(this.quantity);
-        return product;
-    }
 }

@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.autoconfigure.web.WebProperties;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -18,8 +20,12 @@ public class BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Boolean isActive = true;
+
     @Column(updatable = false)
+    @Field(type = FieldType.Date)
     private ZonedDateTime createdAt;
+
+    @Field(type = FieldType.Date)
     private ZonedDateTime updatedAt;
     private Boolean isDeleted = false;
 

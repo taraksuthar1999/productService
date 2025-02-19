@@ -2,6 +2,7 @@ package com.example.productservice.dtos.product;
 
 import com.example.productservice.dtos.category.CategoryDto;
 import com.example.productservice.models.Product;
+import com.example.productservice.utils.Common;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,25 +24,15 @@ public class ProductRequestDto {
     @NotNull(message = "Quantity is required.")
     private Long quantity;
 
-    public static ProductRequestDto fromProduct(Product product){
-        ProductRequestDto productRequestDto = new ProductRequestDto();
-        productRequestDto.setTitle(product.getTitle());
-        productRequestDto.setCategory(CategoryDto.fromCategory(product.getCategory()));
-        productRequestDto.setImg(product.getImg());
-        productRequestDto.setDescription(product.getDescription());
-        productRequestDto.setPrice(product.getPrice());
-        productRequestDto.setQuantity(product.getQuantity());
-        return productRequestDto;
-    }
-
     public Product toProduct(){
-        Product product = new Product();
-        product.setTitle(this.title);
-        product.setImg(this.img);
-        product.setCategory(this.category.toCategory());
-        product.setPrice(this.price);
-        product.setDescription(this.description);
-        product.setQuantity(this.quantity);
-        return product;
+        return Product.builder()
+                .title(this.title)
+                .sku(Common.convertToSku(this.title))
+                .img(this.img)
+                .category(this.category.toCategory())
+                .price(this.price)
+                .description(this.description)
+                .quantity(this.quantity)
+                .build();
     }
 }

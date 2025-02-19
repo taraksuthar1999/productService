@@ -1,0 +1,2 @@
+ALTER TABLE cart_item
+    ADD CONSTRAINT FK_CARTITEM_ON_PRODUCT FOREIGN KEY (product_id) REFERENCES product (id);

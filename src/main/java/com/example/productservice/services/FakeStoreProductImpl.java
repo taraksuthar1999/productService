@@ -1,9 +1,10 @@
 package com.example.productservice.services;
 
+import com.example.productservice.dtos.SortDirection;
 import com.example.productservice.dtos.fakestore.FakeStoreCreateProductRequestDto;
 import com.example.productservice.dtos.fakestore.FakeStoreGetProductResponseDto;
 import com.example.productservice.models.Product;
-import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -38,20 +39,25 @@ public class FakeStoreProductImpl implements ProductService {
 
     }
 
+//    @Override
+//    public Page<Product> getAll() {
+////        throw new RuntimeException();
+//        FakeStoreGetProductResponseDto[] response = restTemplate.getForObject(
+//                "https://fakestoreapi.com/products",
+//                FakeStoreGetProductResponseDto[].class
+//        );
+//
+//        List<Product> products = new ArrayList<>();
+//        for(FakeStoreGetProductResponseDto fakeStoreGetProductResponseDto : response){
+//            products.add(fakeStoreGetProductResponseDto.toProduct());
+//        }
+//
+//        return null;
+//    }
+
     @Override
-    public List<Product> getAll() {
-//        throw new RuntimeException();
-        FakeStoreGetProductResponseDto[] response = restTemplate.getForObject(
-                "https://fakestoreapi.com/products",
-                FakeStoreGetProductResponseDto[].class
-        );
-
-        List<Product> products = new ArrayList<>();
-        for(FakeStoreGetProductResponseDto fakeStoreGetProductResponseDto : response){
-            products.add(fakeStoreGetProductResponseDto.toProduct());
-        }
-
-        return products;
+    public Page<Product> getAll(int page, int size, String sortBy, SortDirection direction) {
+        return null;
     }
 
     @Override

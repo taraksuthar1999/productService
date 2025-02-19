@@ -1,97 +1,66 @@
 package com.example.productservice.controllers;
 
-
 import com.example.productservice.dtos.ResponseDto;
 import com.example.productservice.dtos.ResponseStatus;
-import com.example.productservice.dtos.product.*;
+import com.example.productservice.dtos.SortDirection;
+import com.example.productservice.dtos.product.ProductResponseDto;
 import com.example.productservice.models.Product;
 import com.example.productservice.services.ProductService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
+import com.example.productservice.services.RedisPageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/public/products")
 public class ProductController {
 
     private ProductService productService;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
+    private RedisPageService redisPageService;
 
-    @PostMapping("")
-    public ResponseEntity<ResponseDto<ProductResponseDto>> createProduct(@Valid @RequestBody ProductRequestDto productRequestDto){
-            Product product = productRequestDto.toProduct();
-            product =  productService.create(product);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseDto<>(
-                            ResponseStatus.SUCCESS,
-                            "Product created successfully.",
-                            ProductResponseDto.fromProduct(product)));
+    public ProductController(ProductService productService, RedisPageService redisPageService) {
+        this.productService = productService;
+        this.redisPageService = redisPageService;
     }
 
     @GetMapping("")
-    public  ResponseEntity<ResponseDto<List<ProductResponseDto>>> getAllProducts(){
-            List<Product> products = productService.getAll();
-            List<ProductResponseDto> response = new ArrayList<>();
-            for(Product product : products){
-                response.add(ProductResponseDto.fromProduct(product));
-            }
-            return ResponseEntity.ok()
-                    .body(new ResponseDto<>(
-                            ResponseStatus.SUCCESS,
-                            "Products fetched successfully.",
-                            response));
+    public ResponseEntity<ResponseDto<Page<ProductResponseDto>>> getAllProducts(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") SortDirection direction,
+            @RequestHeader(value = "Authorization", required = false) String token){
+
+
+        String key = "products_"+page+"_"+size+"_"+sortBy+"_"+direction;
+        Page<ProductResponseDto> response = null;
+        if(redisPageService.hasPage(key)){
+            response = redisPageService.getPage(key, ProductResponseDto.class);
+        }else {
+            response = productService.getAll(page, size, sortBy, direction)
+                    .map(ProductResponseDto::fromProduct);
+            redisPageService.savePage(key, response);
+        }
+        return ResponseEntity.ok()
+                .body(new ResponseDto<>(
+                        com.example.productservice.dtos.ResponseStatus.SUCCESS,
+                        "Products fetched successfully.",
+                        response));
     }
 
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto<ProductResponseDto>> getProduct(@PathVariable Long id){
-            Product product = productService.getById(id);
-            ProductResponseDto response = ProductResponseDto.fromProduct(product);
-            return ResponseEntity.ok()
-                    .body(new ResponseDto<>(
-                            ResponseStatus.SUCCESS,
-                            "Product fetched successfully.",
-                            response));
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<ResponseDto<PartialProductResponseDto>> updateProduct(@PathVariable Long id, @RequestBody PartialProductRequestDto partialProductRequestDto) {
-            Product product = partialProductRequestDto.toProduct();
-            productService.update(id,product);
-            PartialProductResponseDto response = PartialProductResponseDto.fromProduct(product);
-            return ResponseEntity.ok()
-                    .body(new ResponseDto<>(
-                            ResponseStatus.SUCCESS,
-                            "Product updated successfully.",
-                            response));
-    }
-
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ResponseDto<ProductResponseDto>> replaceProduct(@PathVariable Long id,@Valid @RequestBody ProductRequestDto productRequestDto){
-            Product product = productService.replace(id, productRequestDto.toProduct());
-            ProductResponseDto response = ProductResponseDto.fromProduct(product);
-            return ResponseEntity.ok()
-                    .body(new ResponseDto<>(
-                            ResponseStatus.SUCCESS,
-                            "Product replaced successfully.",
-                            response));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseDto<Object>> deleteProduct(@PathVariable Long id){
-        productService.delete(id);
+        Product product = productService.getById(id);
+        ProductResponseDto response = ProductResponseDto.fromProduct(product);
         return ResponseEntity.ok()
                 .body(new ResponseDto<>(
                         ResponseStatus.SUCCESS,
-                        "Product deleted successfully.",
-                        null));
+                        "Product fetched successfully.",
+                        response));
     }
+
 }

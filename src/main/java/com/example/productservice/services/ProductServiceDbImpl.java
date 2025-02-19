@@ -1,14 +1,18 @@
 package com.example.productservice.services;
 
+import com.example.productservice.dtos.SortDirection;
 import com.example.productservice.exceptions.*;
 import com.example.productservice.models.Category;
 import com.example.productservice.models.Product;
 import com.example.productservice.repositories.CategoryRepository;
+import com.example.productservice.indices.OpenSearchProductRepository;
 import com.example.productservice.repositories.ProductRepository;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -20,26 +24,40 @@ public class ProductServiceDbImpl implements ProductService{
 
     private CategoryRepository categoryRepository;
 
-    public ProductServiceDbImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    private OpenSearchProductRepository openSearchProductRepository;
+
+    public ProductServiceDbImpl(ProductRepository productRepository,
+                                CategoryRepository categoryRepository,
+                                OpenSearchProductRepository openSearchProductRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.openSearchProductRepository = openSearchProductRepository;
     }
 
     @Override
     public Product create(Product product) {
+        productRepository.findBySkuAndIsDeletedIsFalse(product.getSku()).ifPresent(p -> {
+            throw new ProductAlreadyExistsException("Product already exists.");
+        });
         Category savedCategory = getProductCategory(product.getCategory());
         try{
             product.setCategory(savedCategory);
-            return productRepository.save(product);
+            Product savedProduct =  productRepository.save(product);
+            openSearchProductRepository.save(savedProduct);
+            return savedProduct;
         }catch (Exception e){
-            throw new ProductCreationFailedException("Product creation failed."+e.getMessage());
+            throw new ProductCreationFailedException("Product creation failed. "+e.getMessage());
         }
     }
-
     @Override
-    public List<Product> getAll() {
+    public Page<Product> getAll(int page, int size, String sortBy, SortDirection direction) {
         try{
-            return productRepository.findAllByIsDeletedFalse();
+            Sort sort = Sort.by(sortBy);
+            if(direction.equals(SortDirection.DESC)) sort = sort.descending();
+            else sort = sort.ascending();
+
+            PageRequest pageRequest= PageRequest.of(page,size,sort);
+            return productRepository.findAllByIsDeletedFalse(pageRequest);
         }catch (Exception e){
             throw new FetchAllProductsException("Failed to fetch all products."+e.getMessage());
         }
@@ -53,32 +71,51 @@ public class ProductServiceDbImpl implements ProductService{
     }
 
     @Override
-    public Product update(Long id, Product product) throws ProductNotFoundException {
-       Optional<Product> ifProduct = productRepository.findById(id);
-        if(ifProduct.isEmpty()) throw new ProductNotFoundException("Required product not found.");
-        Product oldProduct = ifProduct.get();
+    public Product update(Long id, Product product){
+       Product oldProduct = productRepository.findById(id)
+               .orElseThrow(() ->
+                new ProductNotFoundException("Required product not found.")
+        );
         if(product.getCategory() != null){
             Category category = getProductCategory(product.getCategory());
             oldProduct.setCategory(category);
         }
-        if(product.getTitle() != null) oldProduct.setTitle(product.getTitle());
+        if(product.getTitle() != null) {
+            productRepository.findByIsDeletedIsFalseAndSkuAndIdIsNot(product.getSku(),id)
+                    .ifPresent(p -> {
+                        throw new ProductAlreadyExistsException("Product already exists with the same title.");
+                    });
+            oldProduct.setTitle(product.getTitle());
+            oldProduct.setSku(product.getSku());
+        }
         if(product.getPrice() != null) oldProduct.setPrice(product.getPrice());
         if(product.getDescription() != null) oldProduct.setDescription(product.getDescription());
         if(product.getImg() != null) oldProduct.setImg(product.getImg());
         if(product.getQuantity() != null) oldProduct.setQuantity(product.getQuantity());
         try{
-            return productRepository.save(oldProduct);
+
+            Product savedProduct =  productRepository.save(oldProduct);
+            openSearchProductRepository.deleteById(savedProduct.getId());
+            openSearchProductRepository.save(savedProduct);
+            return savedProduct;
         }catch (Exception e){
             throw new ProductUpdateFaildException("Product update failed."+e.getMessage());
         }
     }
 
     @Override
-    public Product replace(Long id, Product product) throws ProductNotFoundException{
-        Optional<Product> ifProduct = productRepository.findById(id);
-        if(ifProduct.isEmpty()) throw new ProductNotFoundException("Required product not found.");
+    public Product replace(Long id, Product product){
+        Product oldProduct = productRepository.findById(id)
+                .orElseThrow(() ->
+                        new ProductNotFoundException("Required product not found.")
+                );
+
+        productRepository.findByIsDeletedIsFalseAndSkuAndIdIsNot(product.getSku(),id)
+                .ifPresent(p -> {
+                    throw new ProductAlreadyExistsException("Product already exists.");
+                });
         Category savedCategory = getProductCategory(product.getCategory());
-        Product oldProduct = ifProduct.get();
+
         oldProduct.setTitle(product.getTitle());
         oldProduct.setPrice(product.getPrice());
         oldProduct.setCategory(savedCategory);
@@ -86,7 +123,10 @@ public class ProductServiceDbImpl implements ProductService{
         oldProduct.setQuantity(product.getQuantity());
         oldProduct.setImg(product.getImg());
         try{
-            return productRepository.save(oldProduct);
+            Product savedProduct = productRepository.save(oldProduct);
+            openSearchProductRepository.deleteById(savedProduct.getId());
+            openSearchProductRepository.save(savedProduct);
+            return savedProduct;
         }catch (Exception e){
             throw new ProductReplaceFaildException("Product update failed."+e.getMessage());
         }
@@ -99,13 +139,15 @@ public class ProductServiceDbImpl implements ProductService{
         product.setIsDeleted(true);
         try{
             productRepository.save(product);
+            openSearchProductRepository.deleteById(id);
         }catch (Exception e){
             throw new ProductDeleteFailedException("Product deletion failed."+e.getMessage());
         }
     }
     public Category getProductCategory(Category category){
         try{
-            return categoryRepository.findByName(category.getName()).orElseGet(() -> categoryRepository.save(category));
+            return categoryRepository.findBySku(category.getSku())
+                    .orElseGet(() -> categoryRepository.save(category));
         }catch (Exception e){
             throw new ProductCategoryCreationFailedException("Product category creation failed."+e.getMessage());
         }

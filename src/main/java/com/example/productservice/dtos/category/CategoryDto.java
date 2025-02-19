@@ -1,5 +1,6 @@
 package com.example.productservice.dtos.category;
 import com.example.productservice.models.Category;
+import com.example.productservice.utils.Common;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +18,7 @@ public class CategoryDto {
     public Category toCategory(){
         Category category = new Category();
         category.setName(this.name);
+        category.setSku(Common.convertToSku(this.name));
         return category;
     }
 }

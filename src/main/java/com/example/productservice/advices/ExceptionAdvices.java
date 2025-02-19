@@ -3,10 +3,8 @@ package com.example.productservice.advices;
 
 import com.example.productservice.dtos.ResponseDto;
 import com.example.productservice.dtos.ResponseStatus;
-import com.example.productservice.exceptions.ProductCreationFailedException;
-import com.example.productservice.exceptions.ProductNotFoundException;
-import com.example.productservice.exceptions.ProductReplaceFaildException;
-import com.example.productservice.exceptions.ProductUpdateFaildException;
+import com.example.productservice.exceptions.*;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,6 +30,17 @@ public class ExceptionAdvices {
         responseDto.setMessage("Validation failed.");
         responseDto.setData(null);
         responseDto.setValidationErrors(errors);
+        return ResponseEntity.
+                status(HttpStatus.BAD_REQUEST).
+                body(responseDto);
+    }
+
+    @ExceptionHandler(ProductAlreadyExistsException.class)
+    public ResponseEntity<ResponseDto<Object>> handleProductAlreadyExistsException(ProductAlreadyExistsException e){
+        ResponseDto<Object> responseDto = new ResponseDto<>();
+        responseDto.setStatus(ResponseStatus.BAD_REQUEST);
+        responseDto.setMessage(e.getMessage());
+        responseDto.setData(null);
         return ResponseEntity.
                 status(HttpStatus.BAD_REQUEST).
                 body(responseDto);
