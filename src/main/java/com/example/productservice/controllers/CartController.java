@@ -31,9 +31,8 @@ public class CartController {
     }
 
     @GetMapping("/add")
-    public ResponseEntity<ResponseDto<Object>> addProductToCart(@RequestHeader("x-user") String userId, @RequestParam Long productId) {
-        cartService.addToCart(Long.parseLong(userId), productId);
-
+    public ResponseEntity<ResponseDto<Object>> addProductToCart(@RequestHeader("x-user") String userId, @RequestParam Long productId, @RequestParam(defaultValue = "1") Integer quantity) {
+        cartService.addToCart(Long.parseLong(userId), productId, quantity);
         return ResponseEntity.ok().body(new ResponseDto<>(
                 ResponseStatus.SUCCESS,
                 "Product added to cart successfully.",

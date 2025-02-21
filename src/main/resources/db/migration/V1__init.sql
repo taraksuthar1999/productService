@@ -12,7 +12,8 @@ CREATE TABLE category
 CREATE TABLE category_featured_products
 (
     category_id          BIGINT NOT NULL,
-    featured_products_id BIGINT NOT NULL
+    featured_products_id BIGINT NOT NULL,
+    PRIMARY KEY (category_id, featured_products_id)
 );
 
 CREATE TABLE product

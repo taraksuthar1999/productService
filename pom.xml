@@ -96,19 +96,26 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.opensearch.client/spring-data-opensearch-starter -->
+
+        <!-- https://mvnrepository.com/artifact/org.opensearch.client/opensearch-java -->
         <dependency>
             <groupId>org.opensearch.client</groupId>
-            <artifactId>spring-data-opensearch-starter</artifactId>
-            <version>1.6.0</version>
-            <scope>runtime</scope>
+            <artifactId>opensearch-java</artifactId>
+            <version>2.21.0</version>
         </dependency>
-<!--         https://mvnrepository.com/artifact/org.opensearch.client/spring-data-opensearch -->
+
         <dependency>
             <groupId>org.opensearch.client</groupId>
             <artifactId>spring-data-opensearch</artifactId>
-            <version>1.6.0</version>
+            <version>1.6.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.opensearch.client</groupId>
+                    <artifactId>opensearch-rest-high-level-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -126,6 +133,12 @@
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
             <version>3.3.2</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.opensearch.client/opensearch-rest-high-level-client -->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-rest-high-level-client</artifactId>
+            <version>2.19.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-elasticsearch -->
 <!--        <dependency>-->

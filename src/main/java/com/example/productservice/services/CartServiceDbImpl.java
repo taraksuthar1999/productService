@@ -43,7 +43,7 @@ public class CartServiceDbImpl implements CartService {
     }
 
     @Override
-    public void addToCart(Long userId, Long productId) {
+    public void addToCart(Long userId, Long productId, Integer quantity) {
         try{
             Cart cart = getCart(userId);
             // if cartItem alreadyPresent in cart, update quantity
@@ -55,7 +55,7 @@ public class CartServiceDbImpl implements CartService {
                     .orElse(null);
             // else add new cartItem
             if(presentInCart != null) {
-                presentInCart.setQuantity(presentInCart.getQuantity() + 1);
+                presentInCart.setQuantity(presentInCart.getQuantity() + quantity);
                 cartRepository.save(cart);
             } else {
                 //fetch product
@@ -63,7 +63,7 @@ public class CartServiceDbImpl implements CartService {
                 //add new cartItem
                 CartItem cartItem = CartItem.builder()
                         .product(product)
-                        .quantity(1)
+                        .quantity(quantity)
                         .cart(cart)
                         .build();
                 cartItemRepository.save(cartItem);

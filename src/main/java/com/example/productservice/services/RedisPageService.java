@@ -32,6 +32,28 @@ public class RedisPageService {
     private final String HASH_KEY = "pageCache";
     private final String CONTENT_KEY = "_content";
     private final String PAGEABLE_KEY = "_pageable";
+
+    public <T> void saveObject(String key, T object) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(object));
+            redisTemplate.expire(key,360*1000, TimeUnit.MILLISECONDS);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing object", e);
+        }
+    }
+
+    public <T> T getObject(String key, Class<T> clazz) {
+        try {
+            return objectMapper.readValue((String)redisTemplate.opsForValue().get(key), clazz);
+        } catch (IOException e) {
+            throw new RuntimeException("Error deserializing object", e);
+        }
+    }
+
+    public boolean hasObject(String key) {
+        return redisTemplate.opsForValue().getOperations().hasKey(key);
+    }
+
     public <T> void savePage(String key, Page<T> page) {
         try {
             List<String> StringifyContent = page.getContent().stream().map((T product) -> {

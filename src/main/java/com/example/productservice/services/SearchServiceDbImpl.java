@@ -12,7 +12,6 @@ import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
 
 @Service
-@Primary
 public class SearchServiceDbImpl implements SearchService{
 
     ProductRepository productRepository;

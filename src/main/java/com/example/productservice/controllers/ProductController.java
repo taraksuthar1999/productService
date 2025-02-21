@@ -21,9 +21,12 @@ public class ProductController {
 
     private RedisPageService redisPageService;
 
-    public ProductController(ProductService productService, RedisPageService redisPageService) {
+    private RedisTemplate<String, Object> redisTemplate;
+
+    public ProductController(ProductService productService, RedisPageService redisPageService,RedisTemplate<String,Object> redisTemplate) {
         this.productService = productService;
         this.redisPageService = redisPageService;
+        this.redisTemplate = redisTemplate;
     }
 
     @GetMapping("")
@@ -31,8 +34,7 @@ public class ProductController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") SortDirection direction,
-            @RequestHeader(value = "Authorization", required = false) String token){
+            @RequestParam(defaultValue = "ASC") SortDirection direction){
 
 
         String key = "products_"+page+"_"+size+"_"+sortBy+"_"+direction;
@@ -54,7 +56,13 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto<ProductResponseDto>> getProduct(@PathVariable Long id){
-        Product product = productService.getById(id);
+        String key = "product_"+id;
+        Product product = null;
+        if(redisPageService.hasObject(key)) product = redisPageService.getObject(key, Product.class);
+        else{
+            product = productService.getById(id);
+            redisPageService.saveObject(key, product);
+        }
         ProductResponseDto response = ProductResponseDto.fromProduct(product);
         return ResponseEntity.ok()
                 .body(new ResponseDto<>(
